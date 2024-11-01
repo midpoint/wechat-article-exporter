@@ -11,17 +11,20 @@
 <script setup lang="ts">
 const isDev = !import.meta.env.PROD
 
-const loginAccount = useLoginAccount()
+if (!useLoginAccount().value) {
+  navigateTo('/login', {replace: true})
+}
 
-onMounted(() => {
-  if (!loginAccount.value) {
-    navigateTo('/login')
-  }
-})
 useHead({
+  meta: [
+    {
+      name: 'referrer',
+      content: 'no-referrer'
+    }
+  ],
   script: [
     {
-      src: '/register.js'
+      src: '/unregister.js',
     }
   ]
 })

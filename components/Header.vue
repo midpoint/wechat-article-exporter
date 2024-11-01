@@ -13,6 +13,10 @@
 <!--      <input type="file" @change="fileChange">-->
     </div>
     <div class="hidden space-x-5 lg:flex lg:items-center">
+      <NuxtLink to="/dashboard/download"
+                class="font-semibold inline-flex items-center justify-center border select-none border-slate-6 bg-slate-2 text-slate-12 hover:bg-slate-4 text-sm h-8 px-3 rounded-md gap-1">
+        数据导出
+      </NuxtLink>
       <span class="text-slate-500 text-sm font-medium">隐藏已删除文章: </span>
       <UToggle v-model="hideDeleted" @change="toggleHideDeleted" />
       <BaseSearch v-model="articleQuery" @search="searchArticle" placeholder="搜索文章标题"/>
@@ -22,8 +26,8 @@
       </a>
     </div>
     <div v-if="loginAccount" class="flex flex-col sm:flex-row items-center sm:space-x-2 ml-5">
-      <img v-if="loginAccount.head_img" :src="loginAccount.head_img" alt="" class="rounded-full size-10">
-      <span v-if="loginAccount.nick_name">{{loginAccount.nick_name}}</span>
+      <img v-if="loginAccount.avatar" :src="loginAccount.avatar" alt="" class="rounded-full size-10">
+      <span v-if="loginAccount.nickname">{{loginAccount.nickname}}</span>
     </div>
   </header>
 
@@ -75,7 +79,7 @@ import type {AccountInfo, AuthorInfo} from "~/types/types";
 import {Loader, ArrowRightLeft} from "lucide-vue-next";
 import {packHTMLAssets} from "~/utils";
 import {ACCOUNT_LIST_PAGE_SIZE, ACCOUNT_TYPE} from "~/config";
-import {authorInfo, getAccountList} from "~/apis";
+import {getAccountList} from "~/apis";
 
 
 const loginAccount = useLoginAccount()
@@ -107,12 +111,7 @@ async function searchAccount() {
   accountList.length = 0
   noMoreData.value = false
 
-  if (/^[a-z0-9]+==$/i.test(accountQuery.value)) {
-    // 直接输入的bizNo
-    await loadAuthorInfo(accountQuery.value)
-  } else {
-    await loadData()
-  }
+  await loadData()
 }
 
 const loading = ref(false)
@@ -140,26 +139,6 @@ async function loadData() {
   }
 }
 
-async function loadAuthorInfo(biz: string) {
-  loading.value = true
-
-  try {
-    const result = await authorInfo(accountQuery.value)
-    if (result.base_resp.ret === 0) {
-      accountList.push({
-        type: 'author',
-        fakeid: biz,
-        nickname: result.identity_name,
-      })
-    }
-    noMoreData.value = true
-  } catch (e: any) {
-    alert(e.message)
-    console.error(e)
-  } finally {
-    loading.value = false
-  }
-}
 
 /**
  * 选择公众号

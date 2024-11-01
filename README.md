@@ -1,33 +1,41 @@
 <p align="center">
-  <img src="./public/favicon.ico" alt="Logo" width="100">
+  <img src="./assets/logo.svg" alt="Logo">
 </p>
 
-<h3 align="center">微信公众号文章导出工具，100%还原文章样式。</h3>
+# wechat-article-exporter
 
 [![Deploy][deploy-badge]][deploy]
 ![GitHub stars]
 ![GitHub forks]
 ![GitHub License]
-![Website]
-![GitHub commit activity]
-![GitHub last commit]
+
+
+在线批量导出微信公众号文章，支持内嵌的音视频导出，无需搭建任何环境，可100%还原文章样式，支持私有部署。
+
+交流群(QQ): `991482155`
+
+## 注意
+
+由于免费的代理资源有限，因此推荐 **私有部署 + 搭建私有代理节点** 服用，部署教程在下方。
 
 
 ## :dart: 特性
 
 - [x] 搜索公众号，支持关键字和biz搜索
-- [x] 搜索公众号内文章
-- [x] 导出文章 html (打包了图片和样式文件，能够保证100%还原文章样式)
-- [x] 批量导出公众号文章 html
+- [x] 搜索公众号内文章(根据文章标题搜索)
+- [x] 导出 html 格式(打包了图片和样式文件，能够保证100%还原文章样式)
+- [x] 批量导出 html 格式(zip打包)
 - [x] 缓存文章列表数据，减少接口请求次数 (关键字搜索的文章不会进入缓存)
-- [x] 过滤已删除文章
+- [x] 支持文章过滤，包括作者、标题、发布时间、原创标识、所属合集等
 - [x] 支持合集下载
-- [ ] 支持图片分享消息
-- [ ] 支持导出评论(需要获取目标公众号的key)
-- [ ] 支持导出 md/docx/pdf/image 格式(需要技术调研，最终样式不能保证100%还原)
+- [x] 支持内嵌的音视频下载
+- [x] 支持图片分享消息
+- [x] 支持视频分享消息
+- [x] 支持导出评论、阅读量等数据 (需要抓包获取 credentials 信息，[查看操作步骤](docs/credentials.md))
+- [ ] 支持订阅机制，根据指定规则自动下载文章
 
 
-## :hammer: 使用
+## :hammer: 如何使用
 
 1. 注册一个微信公众号 (已有账号的话跳过)
 
@@ -90,15 +98,63 @@
 </details>
 
 
+## 内嵌音视频下载
+从 2024-10-21 开始，下载机制进行了调整，文章内嵌的 **音视频下载** 需要配合浏览器插件才能下载。
+
+这里推荐用 [ModHeader插件](https://modheader.com/)，插件的配置如下:
+![modheader插件设置](assets/modheader-plugin-config.png)
+
+<details>
+<summary>配置说明</summary>
+
+请求头中添加`Referer`，值为`https://mp.weixin.qq.com/`, 解决页面上图片显示及视频资源下载问题。
+
+响应头中添加`Access-Control-Allow-Origin`，值为`*`, 解决下载资源接口跨域问题。
+
+过滤器添加2个域名：`wechat-article-exporter.deno.dev`和`localhost`，表示只有这些域名发起的请求才会应用这些配置。`localhost`用于本地开发调试。
+
+可复制以下配置直接导入到 ModHeader 插件中:
+```json
+[
+  {
+    "headers": [
+      {
+        "appendMode": false,
+        "enabled": true,
+        "name": "Referer",
+        "value": "https://mp.weixin.qq.com/"
+      }
+    ],
+    "initiatorDomainFilters": [
+      {
+        "domain": "wechat-article-exporter.deno.dev",
+        "enabled": true
+      },
+      {
+        "domain": "localhost",
+        "enabled": true
+      }
+    ],
+    "respHeaders": [
+      {
+        "appendMode": false,
+        "enabled": true,
+        "name": "Access-Control-Allow-Origin",
+        "value": "*"
+      }
+    ],
+    "shortTitle": "1",
+    "title": "公众号文章导出",
+    "version": 2
+  }
+]
+```
+</details>
+
 
 ## :bulb: 原理
 
 在公众号后台写文章时支持搜索其他公众号的文章功能，以此来实现抓取指定公众号所有文章的目的。
-
-
-## :loudspeaker: 关于批量导出
-
-由于微信对相关接口有额度/频率的调用限制，所以批量导出功能并不会去批量获取新的数据，仅仅是将已缓存的数据导出。由于翻页时已经将数据进行了缓存，所以批量导出的数据即页面所显示的数据。
 
 
 ## :earth_americas: 关于代理池
@@ -109,20 +165,27 @@
 ```
 https://vproxy-01.deno.dev
 https://vproxy-02.deno.dev
-https://vproxy-03.deno.dev
-https://vproxy-04.deno.dev
-https://vproxy-05.deno.dev
-https://vproxy-06.deno.dev
+https://vproxy-03.deno.dev (本月额度已用完，刷新时间: 2024-11-02 at 19:59:12)
+https://vproxy-04.deno.dev (本月额度已用完，刷新时间: 2024-11-02 at 19:59:12)
+https://vproxy-05.deno.dev (本月额度已用完，刷新时间: 2024-11-08 at 12:22:38)
+https://vproxy-06.deno.dev (本月额度已用完，刷新时间: 2024-11-08 at 12:22:38)
+https://vproxy-07.deno.dev
+https://vproxy-08.deno.dev
+https://vproxy-09.deno.dev
+https://vproxy-10.deno.dev
+https://vproxy-11.deno.dev
+https://vproxy-12.deno.dev
+https://vproxy-13.deno.dev
+https://vproxy-14.deno.dev
+https://vproxy-15.deno.dev
+https://vproxy-16.deno.dev
 https://vproxy-01.jooooock.workers.dev
 https://vproxy-02.jooooock.workers.dev
 ```
 
 > 以上节点都是部署在 Deno Deploy / Cloudflare Workers 上面的免费账户中，算是白嫖了这些托管平台的流量。
 >
-> 代理节点越多，则下载速度越快。
-> 因此欢迎大家自己搭建一些节点，并进行共享。
->
-> 目前这些节点是公开的，后续打算加入签名验证机制，防止被恶意盗刷。
+> 目前这些节点都是公开的，后续打算加入签名验证机制，防止被恶意盗刷。
 
 代理节点代码 (未进行签名验证，请酌情使用):
 
@@ -248,23 +311,40 @@ export default {
 </details>
 
 
+## 关于导出其他格式
+本项目暂不支持除`html`格式之外的其他格式，很大一部分原因是样式很难保真。如果需要其他格式，可以寻找其他格式转换工具。
+
+> PDF格式可参考: https://github.com/colin4k/wechat-article-dl
+
+
+## 常见问题
+请参考 [faq](docs/faq.md) 文档，如果遇到其他使用问题，欢迎在 Issue 中说明。
+
 ## :heart: 感谢
 
 - 感谢 [Deno Deploy]、[Cloudflare Workers] 提供免费托管服务
 - 感谢 [WeChat_Article] 项目提供原理思路
 
 
-## :coffee: 捐赠与支持
+## :coffee: 支持
 
-如果你觉得本项目帮助到了你，请给作者一个免费的 Star，也可以请作者喝杯咖啡，感谢你的支持！
+如果你觉得本项目帮助到了你，请给作者一个免费的 Star，感谢你的支持！
 
-<table>
-<tr>
-<td><a href="https://ko-fi.com/Y8Y3VBAML"><img src="https://user-images.githubusercontent.com/14358394/115450238-f39e8100-a21b-11eb-89d0-fa4b82cdbce8.png" width="400" alt="buy me a coffee"></a></td>
-<td><img src="assets/wechat-reward-code.png" height="400" width="400" alt="微信赞赏码" /></td>
-</tr>
-</table>
 
+## 关于后续更新计划
+
+后续会区分出 **免费版** 和 **Pro版**，区别如下:
+
+### 免费版
+- 所有现有功能
+- 所有现有的代理节点
+- 现有功能的bug修复
+
+### Pro版
+- 订阅自动下载服务
+- 更多专用代理节点
+
+> 目前只是有这个计划，并没有开始实施。对于之前有赞赏行为的用户，可提供优惠政策。
 
 ## :star: Star 历史
 
@@ -286,12 +366,6 @@ MIT
 [Github forks]: https://img.shields.io/github/forks/jooooock/wechat-article-exporter?style=social&label=Fork&style=plastic
 
 [Github License]: https://img.shields.io/github/license/jooooock/wechat-article-exporter?label=License
-
-[Website]: https://img.shields.io/website?url=https%3A%2F%2Fwechat-article-exporter.deno.dev%2F&label=Website
-
-[Github commit activity]: https://img.shields.io/github/commit-activity/w/jooooock/wechat-article-exporter
-
-[Github last commit]: https://img.shields.io/github/last-commit/jooooock/wechat-article-exporter
 
 [微信公众平台]: https://mp.weixin.qq.com/cgi-bin/registermidpage?action=index&lang=zh_CN
 

@@ -18,6 +18,8 @@ logs
 .fleet
 .idea
 _data
+debug
+scripts
 
 # Local env files
 .env

@@ -1,7 +1,11 @@
 export interface LoginAccount {
+    uuid: string
     token: string
-    nick_name?: string
-    head_img?: string
+    nickname: string
+    avatar: string
+    fakeid: string
+    expires: string
+    err?: string
 }
 
 export interface LoginInfoResult {
@@ -23,11 +27,6 @@ export interface ScanLoginResult {
     status: number
     acct_size: number
     binduin: string
-}
-
-export interface BizLoginResult {
-    base_resp: BaseResp
-    redirect_url: string
 }
 
 export interface AccountInfo {
@@ -167,4 +166,9 @@ export interface DownloadableArticle {
     date: number
     html?: string
     packed?: boolean
+}
+
+export interface LogoutResponse {
+    statusCode: number
+    statusText: string
 }

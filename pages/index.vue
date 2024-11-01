@@ -1,8 +1,5 @@
 <template>
   <div id="app" class="flex flex-col h-screen overflow-hidden">
-    <div class="bg-violet-400 text-white font-bold py-2 text-center">
-      <NuxtLink to="/dashboard" class="cursor-pointer">体验新版UI</NuxtLink>
-    </div>
     <Header
         @select:account="selectAccount"
         @search:article="searchArticle"
@@ -14,7 +11,6 @@
 
 <script setup lang="ts">
 import type ArticleList from "~/components/ArticleList.vue";
-import type {LoginInfoResult} from "~/types/types";
 
 
 definePageMeta({
@@ -25,7 +21,6 @@ useHead({
   title: '微信公众号文章导出'
 })
 
-const loginAccount = useLoginAccount()
 const activeAccount = useActiveAccount()
 const articleListRef = ref<typeof ArticleList | null>(null)
 
@@ -40,18 +35,4 @@ function selectAccount() {
 function searchArticle(query: string) {
   articleListRef.value?.init(query)
 }
-
-onMounted(async () => {
-  // 获取更多账号信息
-  if (!loginAccount.value.nick_name) {
-    try {
-      const {nick_name, head_img} = await $fetch<LoginInfoResult>(`/api/login/info?token=${loginAccount.value.token}`)
-      loginAccount.value.nick_name = nick_name
-      loginAccount.value.head_img = head_img
-    } catch (e) {
-      console.info('获取账号信息失败')
-      console.error(e)
-    }
-  }
-})
 </script>

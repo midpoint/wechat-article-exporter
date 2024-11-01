@@ -9,6 +9,7 @@ import type {
 import {ACCOUNT_LIST_PAGE_SIZE, ARTICLE_LIST_PAGE_SIZE} from "~/config";
 import {updateAPICache} from "~/store/api";
 import {updateArticleCache} from "~/store/article";
+import type {CommentResponse} from "~/types/comment";
 
 interface AuthorInfoResponse {
     base_resp: {ret: number}
@@ -55,7 +56,7 @@ export async function getArticleList(fakeid: string, token: string, begin = 0, k
     // 记录 api 调用
     await updateAPICache({
         name: 'appmsgpublish',
-        account: loginAccount.value.nick_name!,
+        account: loginAccount.value.nickname!,
         call_time: new Date().getTime(),
         is_normal: resp.base_resp.ret === 0 || resp.base_resp.ret === 200003,
         payload: {
@@ -71,7 +72,7 @@ export async function getArticleList(fakeid: string, token: string, begin = 0, k
         const publish_list = publish_page.publish_list.filter(item => !!item.publish_info)
 
         // 返回的文章数量与请求的文章数量不一致就说明已结束
-        const isCompleted = publish_list.length !== ARTICLE_LIST_PAGE_SIZE
+        const isCompleted = publish_list.length === 0
 
         // 更新缓存，注意搜索的结果不能写入缓存
         if (!keyword) {
@@ -116,7 +117,7 @@ export async function getAccountList(token: string, begin = 0, keyword = ''): Pr
     // 记录 api 调用
     await updateAPICache({
         name: 'searchbiz',
-        account: loginAccount.value.nick_name!,
+        account: loginAccount.value.nickname!,
         call_time: new Date().getTime(),
         is_normal: resp.base_resp.ret === 0 || resp.base_resp.ret === 200003,
         payload: {
@@ -136,5 +137,36 @@ export async function getAccountList(token: string, begin = 0, keyword = ''): Pr
         throw new Error('session expired')
     } else {
         throw new Error(`${resp.base_resp.ret}:${resp.base_resp.err_msg}`)
+    }
+}
+
+/**
+ * 获取评论
+ * @param commentId
+ */
+export async function getComment(commentId: string) {
+    try {
+        // 本地设置的 credentials
+        const credentials = JSON.parse(window.localStorage.getItem('credentials')!)
+        if (!credentials || !credentials.__biz || !credentials.pass_ticket || !credentials.key || !credentials.uin) {
+            console.log('credentials not set')
+            return null
+        }
+        const response = await $fetch<CommentResponse>('/api/comment', {
+            method: 'get',
+            query: {
+                comment_id: commentId,
+                ...credentials,
+            },
+            retry: 0,
+        })
+        if (response.base_resp.ret === 0) {
+            return response
+        } else {
+            return null
+        }
+    } catch (e) {
+        console.warn('credentials parse error', e)
+        return null
     }
 }
