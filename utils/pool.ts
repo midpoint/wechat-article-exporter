@@ -3,7 +3,6 @@ import dayjs from "dayjs"
 import {AVAILABLE_PROXY_LIST} from '~/config'
 import type {DownloadableArticle} from "~/types/types"
 import type {AudioResource, VideoResource} from "~/types/video"
-import {updateProxiesCache} from "~/store/proxy"
 
 /**
  * 代理实例
@@ -96,14 +95,13 @@ class ProxyPool {
 
     init() {
         this.proxies.forEach(proxy => {
-            proxy.usageCount = 0
-            proxy.successCount = 0
-            proxy.failureCount = 0
-            proxy.traffic = 0
+            proxy.busy = false
+            proxy.cooldown = false
         })
     }
 
     async getAvailableProxy() {
+        let time = 0
         while (true) {
             for (const proxy of this.proxies) {
                 if (!proxy.busy && !proxy.cooldown) {
@@ -114,6 +112,11 @@ class ProxyPool {
             }
             // 如果没有可用代理，稍微等待一下
             await sleep(100)
+            time += 100
+            if (time >= 60_000) {
+                // 超时1分钟
+                throw new Error('无可用代理')
+            }
         }
     }
 
@@ -126,11 +129,24 @@ class ProxyPool {
             proxy.failureCount++
             proxy.cooldown = true
 
-            // 2秒冷却时间
+            // 5秒冷却时间
             setTimeout(() => {
                 proxy.cooldown = false;
-            }, 2000);
+            }, 5_000);
+
+            if (proxy.failureCount >= 5 && proxy.successCount === 0) {
+                // 代理被识别为不可用，从代理池中移除
+                console.warn(`代理 ${proxy.address} 不可用，将被移除`)
+                this.removeProxy(proxy)
+            }
         }
+    }
+
+    /**
+     * 移除代理
+     */
+    removeProxy(proxy: ProxyInstance) {
+        this.proxies = this.proxies.filter(p => p.address !== proxy.address)
     }
 
     printProxyUsage() {
@@ -169,6 +185,11 @@ class ProxyPool {
     }
 }
 
+
+// 代理池
+export const pool = new ProxyPool(AVAILABLE_PROXY_LIST);
+
+
 /**
  * 使用代理 proxy 下载资源
  * @param proxy
@@ -181,7 +202,6 @@ async function downloadResource<T extends DownloadResource>(proxy: ProxyInstance
         const size = await downloadFn(resource, proxy.address)
         return [true, size];
     } catch (error) {
-        console.warn(error)
         return [false, 0];
     }
 }
@@ -194,7 +214,7 @@ async function downloadResource<T extends DownloadResource>(proxy: ProxyInstance
  * @param useProxy
  * @param maxRetries
  */
-async function downloadWithRetry<T extends DownloadResource>(pool: ProxyPool, resource: T, downloadFn: DownloadFn<T>, useProxy = true, maxRetries = 3): Promise<DownloadResult> {
+async function downloadWithRetry<T extends DownloadResource>(pool: ProxyPool, resource: T, downloadFn: DownloadFn<T>, useProxy = true, maxRetries = 100): Promise<DownloadResult> {
     let attempts = 0;
     let isSuccess = false;
     let size: number = 0;
@@ -252,7 +272,7 @@ async function downloadWithRetry<T extends DownloadResource>(pool: ProxyPool, re
 }
 
 
-export const pool = new ProxyPool(AVAILABLE_PROXY_LIST);
+
 
 /**
  * 使用代理池下载单个资源
@@ -275,12 +295,7 @@ export async function downloads<T extends DownloadResource>(resources: T[], down
     pool.init()
 
     const tasks = resources.map(resource => download<T>(resource, downloadFn, useProxy));
-    const result = await Promise.all(tasks)
-
-    // 保存代理使用数据
-    await updateProxiesCache(pool.proxies)
-
-    return result
+    return await Promise.all(tasks)
 }
 
 /**
